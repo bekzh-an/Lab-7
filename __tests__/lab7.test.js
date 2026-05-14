@@ -97,12 +97,13 @@ describe('Basic user flow for Website', () => {
      * Check to see if the innerText of #cart-count is 20
      * Remember to remove the .skip from this it once you are finished writing this test.
      */
-    const allItems = await page.$$('product-item');
-    for (let i = 1; i < allItems.length; i++) {
-      const shadowRoot = await allItems[i].getProperty('shadowRoot');
-      const button = await shadowRoot.$('button');
-      await button.click();
-    }
+    // Use $$eval to click all buttons inside shadow roots in one fast browser-context call
+    // Start from index 1 since item 0 was already clicked in Step 2
+    await page.$$eval('product-item', (items) => {
+      items.slice(1).forEach(item => {
+        item.shadowRoot.querySelector('button').click();
+      });
+    });
     const cartCount = await page.$eval('#cart-count', el => el.innerText);
     expect(cartCount).toBe('20');
 
@@ -120,15 +121,9 @@ describe('Basic user flow for Website', () => {
      * Remember to remove the .skip from this it once you are finished writing this test.
      */
     await page.reload();
-    const allItems = await page.$$('product-item');
-    let allRemove = true;
-    for (let i = 0; i < allItems.length; i++) {
-      const shadowRoot = await allItems[i].getProperty('shadowRoot');
-      const button = await shadowRoot.$('button');
-      const innerText = await button.getProperty('innerText');
-      const buttonText = await innerText.jsonValue();
-      if (buttonText !== 'Remove from Cart') { allRemove = false; }
-    }
+    const allRemove = await page.$$eval('product-item', (items) => {
+      return items.every(item => item.shadowRoot.querySelector('button').innerText === 'Remove from Cart');
+    });
     expect(allRemove).toBe(true);
     const cartCount = await page.$eval('#cart-count', el => el.innerText);
     expect(cartCount).toBe('20');
@@ -160,12 +155,11 @@ describe('Basic user flow for Website', () => {
      * Once you have, check to make sure that #cart-count is now 0
      * Remember to remove the .skip from this it once you are finished writing this test.
      */
-    const allItems = await page.$$('product-item');
-    for (let i = 0; i < allItems.length; i++) {
-      const shadowRoot = await allItems[i].getProperty('shadowRoot');
-      const button = await shadowRoot.$('button');
-      await button.click();
-    }
+    await page.$$eval('product-item', (items) => {
+      items.forEach(item => {
+        item.shadowRoot.querySelector('button').click();
+      });
+    });
     const cartCount = await page.$eval('#cart-count', el => el.innerText);
     expect(cartCount).toBe('0');
 
@@ -184,15 +178,9 @@ describe('Basic user flow for Website', () => {
      * Remember to remove the .skip from this it once you are finished writing this test.
      */
     await page.reload();
-    const allItems = await page.$$('product-item');
-    let allAdd = true;
-    for (let i = 0; i < allItems.length; i++) {
-      const shadowRoot = await allItems[i].getProperty('shadowRoot');
-      const button = await shadowRoot.$('button');
-      const innerText = await button.getProperty('innerText');
-      const buttonText = await innerText.jsonValue();
-      if (buttonText !== 'Add to Cart') { allAdd = false; }
-    }
+    const allAdd = await page.$$eval('product-item', (items) => {
+      return items.every(item => item.shadowRoot.querySelector('button').innerText === 'Add to Cart');
+    });
     expect(allAdd).toBe(true);
     const cartCount = await page.$eval('#cart-count', el => el.innerText);
     expect(cartCount).toBe('0');
